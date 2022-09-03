@@ -1,0 +1,33 @@
+name: API
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Fire every hour
+  schedule:
+    - cron: "0 */1 * * *"
+
+jobs:
+  copy-api:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Clone Gmsh from GitLab
+        run: |
+          bash .github/update-api.sh
+        shell: bash
+
+      # TODO: read Gmsh version from f90 file and change the fpm.toml file
+      # if different issue a new release
+
+      - name: Commit changes
+        uses: EndBug/add-and-commit@v8
+        with:
+          author_name: Giannis Nikiteas
+          author_email: giannis.nikiteas@gmail.com
+          message: 'ci: update Gmsh API'
+          add: '.'
