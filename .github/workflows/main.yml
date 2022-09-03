@@ -29,5 +29,5 @@ jobs:
         with:
           author_name: Giannis Nikiteas
           author_email: giannis.nikiteas@gmail.com
-          message: 'ci: update Gmsh API'
-          add: '.'
+          message: "ci: update Gmsh API"
+          add: "."
