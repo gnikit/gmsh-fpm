@@ -1,0 +1,31 @@
+name = "gmsh"
+version = "0.1.0"
+license = "GPL-2.0"
+maintainer = "gnikit@duck.com"
+author = "Giannis Nikiteas"
+copyright = "Copyright 2020 Jane Doe"
+description = "Fortran and C API for the Gmsh mesh library"
+categories = ["fortran", "c", "mesh", "api", "graphics"]
+keywords = ["gmsh", "mesh", "fem", "api"]
+homepage = "https://gmsh.info"
+
+
+[install]
+# library = false
+
+
+[build]
+auto-executables = false
+auto-examples = true
+auto-tests = false
+link = ["gmsh"]
+
+
+[library]
+source-dir = "src"
+
+
+[[executable]]
+name = "gmsh"
+source-dir = "app"
+main = "main.f90"
