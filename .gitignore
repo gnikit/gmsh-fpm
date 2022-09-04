@@ -33,3 +33,4 @@
 
 # Ignore gmsh clone
 gmsh/
+*.msh
