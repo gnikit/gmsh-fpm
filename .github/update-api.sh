@@ -14,4 +14,9 @@ cp gmsh/api/gmsh.f90 src/gmsh.f90
 cp -rf gmsh/tutorials/fortran/* example/fortran/
 cp -rf gmsh/tutorials/*.{png,pos,step,stl} example/
 
+# Copy main files
+cp -f gmsh/CHANGELOG.txt .
+cp -f gmsh/CREDITS.txt .
+cp -f gmsh/LICENSE.txt .
+
 rm -rf gmsh
