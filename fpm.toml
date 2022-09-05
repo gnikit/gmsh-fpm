@@ -4,8 +4,8 @@ license = "GPL-2.0"
 maintainer = "gnikit@duck.com"
 author = "Giannis Nikiteas"
 copyright = "Copyright 2022 Giannis Nikiteas"
-description = "Fortran and C API for the Gmsh mesh library"
-categories = ["fortran", "c", "mesh", "api", "graphics"]
+description = "Fortran API for the Gmsh mesh library"
+categories = ["fortran", "mesh", "api", "graphics"]
 keywords = ["gmsh", "mesh", "fem", "api"]
 homepage = "https://gmsh.info"
 
