@@ -1,5 +1,5 @@
 name = "gmsh"
-version = "0.1.0"
+version = "version.txt"
 license = "GPL-2.0"
 maintainer = "gnikit@duck.com"
 author = "Giannis Nikiteas"
