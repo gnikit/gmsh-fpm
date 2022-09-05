@@ -3,6 +3,10 @@
 Adds the [Gmsh](https://gmsh.info/) finite element mesh generator library to the
 [Fortran Package Manager (fpm)](https://fpm.fortran-lang.org/en/index.html).
 
+> This repository automatically downloads the Gmsh API every hour from the upstream repo
+> <https://gitlab.onelab.info/gmsh/gmsh.git>.
+> FPM releases automatically authored based on the upstream repository.
+
 ## Features
 
 The repository provides:
