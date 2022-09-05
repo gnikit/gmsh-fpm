@@ -5,8 +5,8 @@ maintainer = "gnikit@duck.com"
 author = "Giannis Nikiteas"
 copyright = "Copyright 2022 Giannis Nikiteas"
 description = "Fortran API for the Gmsh mesh library"
-categories = ["fortran", "mesh", "api", "graphics"]
-keywords = ["gmsh", "mesh", "fem", "api"]
+categories = ["interfaces", "numerical", "scientific", "graphics"]
+keywords = ["gmsh", "mesh", "fem", "finite-element", "api"]
 homepage = "https://gmsh.info"
 
 
