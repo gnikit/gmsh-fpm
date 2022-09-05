@@ -19,4 +19,10 @@ cp -f gmsh/CHANGELOG.txt .
 cp -f gmsh/CREDITS.txt .
 cp -f gmsh/LICENSE.txt .
 
+# Store the latest released tag, used for automatic releases of this package
+# The Gmsh tag format is "gmsh_major_minor_patch"
+pushd gmsh
+git describe --tags --abbrev=0 > ../.github/latest_tag.txt
+popd
+
 rm -rf gmsh
