@@ -1,28 +1,29 @@
 #!/usr/bin/env python3
 
-import fileinput
 import os
 
-# Get the version from the fpm.toml
 version_fpm = ""
-version_api = ""
+version_tag = ""
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-# Get the version from the API version, this version can be different from the
-# latest tag version, since Gmsh dev cycle tends to increment the version number
-# first and release the tag later once done.
-with open(os.path.join(dir_path, "..", "src", "gmsh.f90"), "r") as f:
-    for line in f:
-        if "public :: GMSH_API_VERSION =" in line:
-            version_api = line.split("GMSH_API_VERSION =")[1].strip().strip('"')
-            break
 
 # Get the version from the fpm.toml
-with open(os.path.join(dir_path, "version.txt"), "r") as f:
+with open(os.path.join(dir_path, "..", "version.txt"), "r") as f:
     version_fpm = f.readlines()[0]
 
+# Get the version from the latest release, we cannot use the version stated
+# in the API because the development cycle of Gmsh tends to first increment the
+# version internally and then create a tag, which would cause our releases
+# to contain the wrong API files for the corresponding tag.
+with open(os.path.join(dir_path, "latest_tag.txt"), "r") as f:
+    version_tag = f.readlines()[0].strip()
+    # The Gmsh tag format is "gmsh_major_minor_patch"
+    version_tag = ".".join(version_tag.split("_")[1:])
 
-if version_fpm != version_api:
-    print(version_api)
+if version_fpm != version_tag:
+    # udpate the version.txt file
+    with open(os.path.join(dir_path, "..", "version.txt"), "w") as f:
+        f.write(version_tag)
+    print(version_tag)
 else:
     print("version is up to date!")
