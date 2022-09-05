@@ -55,10 +55,10 @@ jobs:
           custom_tag: ${{ env.VERSION }}
           dry_run: true
 
-      - name: Create Release
-        id: create_release
-        uses: softprops/action-gh-release@v0.1.14
-        with:
-          name: fpm Gmsh ${{ env.VERSION }}
-          tag_name: ${{ env.VERSION }}
-          generate_release_notes: true
+      # - name: Create Release
+      #   id: create_release
+      #   uses: softprops/action-gh-release@v0.1.14
+      #   with:
+      #     name: fpm Gmsh ${{ env.VERSION }}
+      #     tag_name: ${{ env.VERSION }}
+      #     generate_release_notes: true
