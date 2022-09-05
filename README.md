@@ -29,6 +29,17 @@ export LD_LIBRARY_PATH=/path/to/gmsh/lib:$LD_LIBRARY_PATH
 fpm run --link-flag "-L/path/to/gmsh/lib"
 ```
 
+### Running the examples
+
+Some examples require input files, stored in the `examples` directory.
+Currently, it is possible to run such programs with `fpm` via the `fpm run` command:
+
+```bash
+fpm run --example t13 --runner cp -- example/fortran/ && pushd example/fortran/ && ./t13 && rm t13 && popd
+```
+
+For the fpm feature request see issue [#410](https://github.com/fortran-lang/fpm/issues/410).
+
 ### Note 📝️
 
 For `gfortran` you can remove explicitly having to link to `libgmsh` by adding
