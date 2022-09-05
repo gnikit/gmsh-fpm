@@ -22,7 +22,7 @@ jobs:
         shell: bash
 
       - name: Commit changes
-        uses: EndBug/add-and-commit@v8
+        uses: EndBug/add-and-commit@v9
         with:
           author_name: "gnikit"
           author_email: giannis.nikiteas@gmail.com
