@@ -1,6 +1,7 @@
+#!/usr/bin/env python3
+
 import fileinput
 import os
-import sys
 
 # Get the version from the fpm.toml
 version_fpm = ""
@@ -29,12 +30,6 @@ with fileinput.input(os.path.join(dir_path, "fpm.toml"), inplace=True) as f:
             print(line, end="")
 
 if version_fpm != version_api:
-    print("A new Gmsh version is available! Create a new release!")
-    print("fpm version: ", version_fpm)
-    print("remote version: ", version_api)
-    os.environ["GMSH_API_VERSION"] = version_api
-    sys.exit(1)
+    print(version_api)
 else:
-    print("fpm version: ", version_fpm)
-    print("Gmsh fpm API is up to date!")
-    sys.exit(0)
+    print("version is up to date!")
