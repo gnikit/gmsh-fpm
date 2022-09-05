@@ -1,0 +1,56 @@
+name: release
+
+on:
+  workflow_run:
+    workflows: ["Update API"]
+    types:
+      - completed
+
+jobs:
+  update-version:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.x
+
+      - name: Update fpm version
+        run: |
+          version=$(python3 .github/version.py)
+          if [[ $version != "version is up to date!" ]]; then
+            echo "VERSION=$version" >> $GITHUB_ENV
+            exit 0
+          else
+            exit 1
+          fi
+        shell: bash
+
+      # We only have changes if we haven't error-ed out
+      - name: Commit changes
+        uses: EndBug/add-and-commit@v8
+        with:
+          author_name: "gnikit"
+          author_email: giannis.nikiteas@gmail.com
+          message: "ci: update fpm version"
+          add: "."
+
+  new-release:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    needs: update-version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v0.1.14
+        with:
+          name: fpm Gmsh ${{ env.VERSION }}
+          tag_name: ${{ env.VERSION }}
+          generate_release_notes: true
