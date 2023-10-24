@@ -19,14 +19,14 @@ The repository provides:
 
 To use `gmsh-fpm` within your fpm project, add the following to your `fpm.toml` file:
 
-```bash
+```toml
 [dependencies]
 gmsh = { git="https://github.com/gnikit/gmsh-fpm.git" }
 ```
 
 or to use a specific version:
 
-```bash
+```toml
 gmsh = { git="https://github.com/gnikit/gmsh-fpm.git", tag = "4.11.1" }
 ```
 
