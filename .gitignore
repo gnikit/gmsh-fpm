@@ -34,4 +34,6 @@
 # Ignore gmsh clone
 gmsh/
 *.msh
-sdk/
+venv/
+sdk*
+gmsh-sdk*/
