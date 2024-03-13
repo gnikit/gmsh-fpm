@@ -22,7 +22,7 @@ cp -f gmsh/LICENSE.txt .
 # Store the latest released tag, used for automatic releases of this package
 # The Gmsh tag format is "gmsh_major_minor_patch"
 pushd gmsh
-git describe --tags --abbrev=0 > ../.github/latest_tag.txt
+git describe --tags `git rev-list --tags --max-count=1` > ../.github/latest_tag.txt
 popd
 
 rm -rf gmsh
