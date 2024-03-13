@@ -34,3 +34,4 @@
 # Ignore gmsh clone
 gmsh/
 *.msh
+sdk/
