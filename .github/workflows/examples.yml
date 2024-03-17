@@ -23,6 +23,11 @@ jobs:
           python3 -m pip install --upgrade fpm
           fpm --version
 
+      - name: Install Gmsh dependencies
+        run: |
+          sudo apt update
+          sudo apt install libglu1-mesa libxi-dev libxmu-dev libglu1-mesa-dev -y
+
       - name: Download Gmsh SDK
         run: |
           wget https://gmsh.info/bin/Linux/gmsh-git-Linux64-sdk.tgz -O $GMSH_SDK.tgz
