@@ -1,0 +1,27 @@
+name: Run Gmsh Examples
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Fire every hour
+  schedule:
+    - cron: "0 */1 * * *"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download Gmsh SDK
+        run: |
+          wget https://gmsh.info/bin/Linux/gmsh-git-Linux64-sdk.tgz -O $GMSH_SDK.tgz
+          mkdir $GMSH_SDK
+          tar -xzf $GMSH_SDK.tgz --strip-components=1 -C $GMSH_SDK
+        env:
+          GMSH_SDK: ${{ github.workspace }}/sdk
+
+      - name: Build Gmsh Examples
+        run: |
+          bash ./run_examples.sh
