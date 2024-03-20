@@ -37,15 +37,16 @@ jobs:
           wget https://gmsh.info/bin/Linux/gmsh-git-Linux64-sdk.tgz -O $GMSH_SDK.tgz
           mkdir $GMSH_SDK
           tar -xzf $GMSH_SDK.tgz --strip-components=1 -C $GMSH_SDK
+          echo "GMSH_SDK=$GMSH_SDK" >> "$GITHUB_ENV"
+          echo "LIB_GMSH=$GMSH_SDK/lib" >> "$GITHUB_ENV"
         env:
           GMSH_SDK: ${{ github.workspace }}/sdk
 
       - name: Build Gmsh Examples
         run: |
+          export FPM_LDFLAGS="-L$LIB_GMSH -Wl,-rpath,$LIB_GMSH"
+          echo "FPM_LDFLAGS=$FPM_LDFLAGS" >> "$GITHUB_ENV"
           fpm build --profile debug
-        env:
-          LIB_GMSH: ${{ github.workspace }}/sdk/lib
-          FPM_LDFLAGS: -L${{ env.LIB_GMSH }} -Wl,-rpath,${{ env.LIB_GMSH }}
 
       - name: Run Gmsh Examples
         run: |
