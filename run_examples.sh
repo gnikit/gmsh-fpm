@@ -2,8 +2,14 @@
 
 set -e
 
-SDK_LIB=$(pwd)/sdk/lib
-export FPM_LDFLAGS="-L$SDK_LIB -Wl,-rpath,$SDK_LIB"
+if [[ -z "${FPM_LDFLAGS}" ]]; then
+    LIB_GMSH=$(pwd)/sdk/lib
+    export FPM_LDFLAGS="-L$LIB_GMSH -Wl,-rpath,$LIB_GMSH"
+    echo "FPM_LDFLAGS not externally set, using default: ${FPM_LDFLAGS}"
+else
+    export FPM_LDFLAGS="${FPM_LDFLAGS}"
+    echo "FPM_LDFLAGS is externally set: ${FPM_LDFLAGS}"
+fi
 
 # for loop for examples from 1..21
 for EXAMPLE in $(seq 1 21); do
