@@ -42,4 +42,11 @@ jobs:
 
       - name: Build Gmsh Examples
         run: |
+          fpm build --profile debug
+        env:
+          LIB_GMSH: ${{ github.workspace }}/sdk/lib
+          FPM_LDFLAGS: -L${{ env.LIB_GMSH }} -Wl,-rpath,${{ env.LIB_GMSH }}
+
+      - name: Run Gmsh Examples
+        run: |
           bash ./run_examples.sh
