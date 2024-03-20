@@ -1,0 +1,53 @@
+name: Examples
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Fire every hour
+  schedule:
+    - cron: "0 */1 * * *"
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install fpm
+        run: |
+          python3 -m pip install --upgrade fpm
+          fpm --version
+
+      - name: Install Gmsh dependencies
+        run: |
+          sudo apt update
+          sudo apt install libglu1-mesa libxi-dev libxmu-dev libglu1-mesa-dev -y
+
+      - name: Download Gmsh SDK
+        run: |
+          wget https://gmsh.info/bin/Linux/gmsh-git-Linux64-sdk.tgz -O $GMSH_SDK.tgz
+          mkdir $GMSH_SDK
+          tar -xzf $GMSH_SDK.tgz --strip-components=1 -C $GMSH_SDK
+          echo "GMSH_SDK=$GMSH_SDK" >> "$GITHUB_ENV"
+          echo "LIB_GMSH=$GMSH_SDK/lib" >> "$GITHUB_ENV"
+        env:
+          GMSH_SDK: ${{ github.workspace }}/sdk
+
+      - name: Build Gmsh Examples
+        run: |
+          export FPM_LDFLAGS="-L$LIB_GMSH -Wl,-rpath,$LIB_GMSH"
+          echo "FPM_LDFLAGS=$FPM_LDFLAGS" >> "$GITHUB_ENV"
+          fpm build --profile debug
+
+      - name: Run Gmsh Examples
+        run: |
+          bash ./run_examples.sh
