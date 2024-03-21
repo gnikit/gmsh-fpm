@@ -1,5 +1,9 @@
 # gmsh-fpm
 
+![GitHub Release](https://img.shields.io/github/v/release/gnikit/gmsh-fpm?logo=github&label=Release)
+[![Examples](https://github.com/gnikit/gmsh-fpm/actions/workflows/examples.yml/badge.svg)](https://github.com/gnikit/gmsh-fpm/actions/workflows/examples.yml)
+[![Update API](https://github.com/gnikit/gmsh-fpm/actions/workflows/main.yml/badge.svg)](https://github.com/gnikit/gmsh-fpm/actions/workflows/main.yml)
+
 Adds the [Gmsh](https://gmsh.info/) finite element mesh generator library to the
 [Fortran Package Manager (fpm)](https://fpm.fortran-lang.org/en/index.html).
 
