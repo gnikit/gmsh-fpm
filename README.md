@@ -9,7 +9,7 @@ Adds the [Gmsh](https://gmsh.info/) finite element mesh generator library to the
 
 > This repository automatically downloads the Gmsh API every hour from the upstream repo
 > <https://gitlab.onelab.info/gmsh/gmsh.git>.
-> FPM releases automatically authored based on the upstream repository.
+> Releases are automatically authored based on the upstream repository.
 
 ## Features
 
@@ -23,18 +23,23 @@ The repository provides:
 
 To use `gmsh-fpm` within your fpm project, add the following to your `fpm.toml` file:
 
+Pin to a specific version **(Recommended)**:
+
+```toml
+[dependencies]
+gmsh = { git="https://github.com/gnikit/gmsh-fpm.git", tag = "4.12.2" }
+```
+
+or live at head:
+
 ```toml
 [dependencies]
 gmsh = { git="https://github.com/gnikit/gmsh-fpm.git" }
 ```
 
-or to use a specific version:
+## Build
 
-```toml
-gmsh = { git="https://github.com/gnikit/gmsh-fpm.git", tag = "4.11.1" }
-```
-
-To build Gmsh executable and all the examples, run:
+To build the `gmsh` executable and all the examples, run:
 
 ```bash
 fpm build --link-flag "-L/path/to/gmsh/lib"
@@ -43,34 +48,38 @@ fpm build --link-flag "-L/path/to/gmsh/lib"
 or by setting the `FPM_LDFLAGS=-L/path/to/gmsh-sdk/lib` environment variable.
 
 To run any of the examples or the Gmsh executable itself, you need to add the `lib`
-directory to the `LD_LIBRARY_PATH`
+directory to the `LD_LIBRARY_PATH`.
+You can do that only for `fpm` via:
 
-```bash
+<!-- ```bash
 export LD_LIBRARY_PATH=/path/to/gmsh/lib:$LD_LIBRARY_PATH
 fpm run --link-flag "-L/path/to/gmsh/lib"
 ```
 
+or in a more compact manner -->
+
+```bash
+export FPM_LDFLAGS="-L/path/to/gmsh/lib -Wl,-rpath,/path/to/gmsh/lib"
+fpm run
+```
+
 ### Running the examples
 
-Some examples require input files, stored in the `examples` directory.
-Currently, it is possible to run such programs with `fpm` via the `fpm run` command:
+With `FPM_LDFLAGS` defined as above, normally one can run the examples in the usual way:
 
 ```bash
-fpm run --example t13 --runner cp -- example/fortran/ && pushd example/fortran/ && ./t13 && rm t13 && popd
+fpm run --example t1
 ```
 
-For the fpm feature request see issue [#410](https://github.com/fortran-lang/fpm/issues/410).
-
-### Note 📝️
-
-For `gfortran` you can remove explicitly having to link to `libgmsh` by adding
-the `lib` directory into your `LIBRARY_PATH` environment variable for `gfortran`
-to search before compiling e,g.
+If the example requires input files, one will need to change to the
+example directory and run the executable from there:
 
 ```bash
-export LIBRARY_PATH=/path/to/gmsh-sdk/lib:$LIBRARY_PATH
-fpm build
+fpm run --example t13 --runner cp -- example/fortran/; pushd example/fortran/; ./t13; rm t13; popd
 ```
+
+For the fpm feature request that would simplify the above command see Issue
+[#410](https://github.com/fortran-lang/fpm/issues/410).
 
 ## Requirements
 
@@ -80,8 +89,16 @@ fpm build
 ### Installing Gmsh
 
 This `fpm` package requires `libgmsh` to be already installed on your system.
-There are 3 ways in which you can get `libgmsh`:
+You can download relevant Software Development Kit (SDK) from the [Gmsh website](https://gmsh.info/#Download).
 
+| ❗ Important | Download the same Gmsh SDK version as the one used in `gmsh-fpm` |
+| ------------ | ---------------------------------------------------------------- |
+
+For building Gmsh from source, instead of downloading an SDK, checkout the Gmsh
+[repository](https://gitlab.onelab.info/gmsh/gmsh) or
+[source distributions](https://gmsh.info/src/) and follow the relevant instructions.
+
+<!--
 #### 1. Download the Software Development Kit (SDK)
 
 The Gmsh SDK is available for download on the [Gmsh website](https://gmsh.info/#Download).
@@ -115,6 +132,8 @@ cmake --install build --config Release
 
 | 📝️ Note | You might need to install [FLTK](https://github.com/fltk/fltk) and [OpenCASCADE](https://dev.opencascade.org/release) to get the full functionality of the library. |
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+
+-->
 
 ### Compiler
 
