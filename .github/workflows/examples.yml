@@ -5,9 +5,10 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
-  # Fire every hour
+  # Fire every 6 hours
   schedule:
-    - cron: "0 */1 * * *"
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
 
 jobs:
   test:
