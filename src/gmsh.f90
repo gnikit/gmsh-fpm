@@ -14525,7 +14525,7 @@ module gmsh
 
   !> Triangulate the points given in the `coordinates' vector as concatenated
   !! pairs of u, v coordinates, with (optional) constrained edges given in the
-  !! `edges' vector as pair of indexes (with numbering starting at 1), and
+  !! `edges' vector as pairs of indexes (with numbering starting at 1), and
   !! return the triangles as concatenated triplets of point indexes (with
   !! numbering starting at 1) in `triangles'.
   subroutine gmshAlgorithmTriangulate(coordinates, &
@@ -14569,17 +14569,25 @@ module gmsh
   end subroutine gmshAlgorithmTriangulate
 
   !> Tetrahedralize the points given in the `coordinates' vector as concatenated
-  !! triplets of x, y, z coordinates, and return the tetrahedra as concatenated
-  !! quadruplets of point indexes (with numbering starting at 1) in
-  !! `tetrahedra'.
+  !! triplets of x, y, z coordinates, with (optional) constrained triangles
+  !! given in the `triangles' vector as triplets of indexes (with numbering
+  !! starting at 1), and return the tetrahedra as concatenated quadruplets of
+  !! point indexes (with numbering starting at 1) in `tetrahedra'. Steiner
+  !! points might be added in the `steiner' vector.
   subroutine gmshAlgorithmTetrahedralize(coordinates, &
                                          tetrahedra, &
+                                         steiner, &
+                                         triangles, &
                                          ierr)
     interface
     subroutine C_API(api_coordinates_, &
                      api_coordinates_n_, &
                      api_tetrahedra_, &
                      api_tetrahedra_n_, &
+                     api_steiner_, &
+                     api_steiner_n_, &
+                     api_triangles_, &
+                     api_triangles_n_, &
                      ierr_) &
       bind(C, name="gmshAlgorithmTetrahedralize")
       use, intrinsic :: iso_c_binding
@@ -14587,21 +14595,35 @@ module gmsh
       integer(c_size_t), value, intent(in) :: api_coordinates_n_
       type(c_ptr), intent(out) :: api_tetrahedra_
       integer(c_size_t), intent(out) :: api_tetrahedra_n_
+      type(c_ptr), intent(out) :: api_steiner_
+      integer(c_size_t) :: api_steiner_n_
+      integer(c_size_t), dimension(*), optional :: api_triangles_
+      integer(c_size_t), value, intent(in) :: api_triangles_n_
       integer(c_int), intent(out), optional :: ierr_
     end subroutine C_API
     end interface
     real(c_double), dimension(:), intent(in) :: coordinates
     integer(c_size_t), dimension(:), allocatable, intent(out) :: tetrahedra
+    real(c_double), dimension(:), allocatable, intent(out) :: steiner
+    integer(c_size_t), dimension(:), intent(in), optional :: triangles
     integer(c_int), intent(out), optional :: ierr
     type(c_ptr) :: api_tetrahedra_
     integer(c_size_t) :: api_tetrahedra_n_
+    type(c_ptr) :: api_steiner_
+    integer(c_size_t) :: api_steiner_n_
     call C_API(api_coordinates_=coordinates, &
          api_coordinates_n_=size_gmsh_double(coordinates), &
          api_tetrahedra_=api_tetrahedra_, &
          api_tetrahedra_n_=api_tetrahedra_n_, &
+         api_steiner_=api_steiner_, &
+         api_steiner_n_=api_steiner_n_, &
+         api_triangles_=triangles, &
+         api_triangles_n_=size_gmsh_size(triangles), &
          ierr_=ierr)
     tetrahedra = ovectorsize_(api_tetrahedra_, &
       api_tetrahedra_n_)
+    steiner = ovectordouble_(api_steiner_, &
+      api_steiner_n_)
   end subroutine gmshAlgorithmTetrahedralize
 
   !> Set the numerical option `option' to the value `value' for plugin `name'.
@@ -14814,17 +14836,24 @@ module gmsh
 
   !> Run the event loop of the graphical user interface, i.e. repeatedly call
   !! `wait()'. First automatically create the user interface if it has not yet
-  !! been initialized. Can only be called in the main thread.
-  subroutine gmshFltkRun(ierr)
+  !! been initialized. If an `optionFileName' is given, load it before entering
+  !! the loop, and save all options and visibility information into it after
+  !! exiting the loop. Can only be called in the main thread.
+  subroutine gmshFltkRun(optionFileName, &
+                         ierr)
     interface
-    subroutine C_API(ierr_) &
+    subroutine C_API(optionFileName, &
+                     ierr_) &
       bind(C, name="gmshFltkRun")
       use, intrinsic :: iso_c_binding
+      character(len=1, kind=c_char), dimension(*), intent(in), optional :: optionFileName
       integer(c_int), intent(out), optional :: ierr_
     end subroutine C_API
     end interface
+    character(len=*), intent(in), optional :: optionFileName
     integer(c_int), intent(out), optional :: ierr
-    call C_API(ierr_=ierr)
+    call C_API(optionFileName=istring_(optval_c_str("", optionFileName)), &
+         ierr_=ierr)
   end subroutine gmshFltkRun
 
   !> Check if the user interface is available (e.g. to detect if it has been
