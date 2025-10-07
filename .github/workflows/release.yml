@@ -48,7 +48,7 @@ jobs:
       - name: Create Release
         if: ${{ env.VERSION }}
         id: create_release
-        uses: softprops/action-gh-release@v2.2.1
+        uses: softprops/action-gh-release@v2.4.0
         with:
           name: Release fpm Gmsh ${{ env.VERSION }}
           tag_name: ${{ steps.tag_version.outputs.new_tag }}
