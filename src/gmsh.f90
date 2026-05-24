@@ -186,6 +186,8 @@ module gmsh
         gmshAlgorithmTriangulate
     procedure, nopass :: tetrahedralize => &
         gmshAlgorithmTetrahedralize
+    procedure, nopass :: refineTetrahedra => &
+        gmshAlgorithmRefineTetrahedra
   end type gmsh_algorithm_t
 
   type, public :: gmsh_view_option_t
@@ -4213,26 +4215,44 @@ module gmsh
   !> Relocate the nodes classified on the entity of dimension `dim' and tag
   !! `tag' using their parametric coordinates. If `tag' < 0, relocate the nodes
   !! for all entities of dimension `dim'. If `dim' and `tag' are negative,
-  !! relocate all the nodes in the mesh.
+  !! relocate all the nodes in the mesh. Optional `min' and `max' vectors (of
+  !! length == `dim') can be provided to linearly rescale each parametric
+  !! coordinate in the new parameter range, based on the provided one.
   subroutine gmshModelMeshRelocateNodes(dim, &
                                         tag, &
+                                        min, &
+                                        max, &
                                         ierr)
     interface
     subroutine C_API(dim, &
                      tag, &
+                     api_min_, &
+                     api_min_n_, &
+                     api_max_, &
+                     api_max_n_, &
                      ierr_) &
       bind(C, name="gmshModelMeshRelocateNodes")
       use, intrinsic :: iso_c_binding
       integer(c_int), value, intent(in) :: dim
       integer(c_int), value, intent(in) :: tag
+      real(c_double), dimension(*), optional :: api_min_
+      integer(c_size_t), value, intent(in) :: api_min_n_
+      real(c_double), dimension(*), optional :: api_max_
+      integer(c_size_t), value, intent(in) :: api_max_n_
       integer(c_int), intent(out), optional :: ierr_
     end subroutine C_API
     end interface
     integer, intent(in), optional :: dim
     integer, intent(in), optional :: tag
+    real(c_double), dimension(:), intent(in), optional :: min
+    real(c_double), dimension(:), intent(in), optional :: max
     integer(c_int), intent(out), optional :: ierr
     call C_API(dim=optval_c_int(-1, dim), &
          tag=optval_c_int(-1, tag), &
+         api_min_=min, &
+         api_min_n_=size_gmsh_double(min), &
+         api_max_=max, &
+         api_max_n_=size_gmsh_double(max), &
          ierr_=ierr)
   end subroutine gmshModelMeshRelocateNodes
 
@@ -14797,6 +14817,70 @@ module gmsh
     steiner = ovectordouble_(api_steiner_, &
       api_steiner_n_)
   end subroutine gmshAlgorithmTetrahedralize
+
+  !> Refine the list of tetrahedra given in the vector `tetraIn', using point
+  !! coordinates `coord' and nodal size field `sizeAtNode'. The new point
+  !! coordinates are returned in the `steiner' vector, and the new tetrahedra in
+  !! the `tetraOut' vector.
+  subroutine gmshAlgorithmRefineTetrahedra(coord, &
+                                           sizeAtNode, &
+                                           tetraIn, &
+                                           steiner, &
+                                           tetraOut, &
+                                           ierr)
+    interface
+    subroutine C_API(api_coord_, &
+                     api_coord_n_, &
+                     api_sizeAtNode_, &
+                     api_sizeAtNode_n_, &
+                     api_tetraIn_, &
+                     api_tetraIn_n_, &
+                     api_steiner_, &
+                     api_steiner_n_, &
+                     api_tetraOut_, &
+                     api_tetraOut_n_, &
+                     ierr_) &
+      bind(C, name="gmshAlgorithmRefineTetrahedra")
+      use, intrinsic :: iso_c_binding
+      real(c_double), dimension(*) :: api_coord_
+      integer(c_size_t), value, intent(in) :: api_coord_n_
+      real(c_double), dimension(*) :: api_sizeAtNode_
+      integer(c_size_t), value, intent(in) :: api_sizeAtNode_n_
+      integer(c_size_t), dimension(*) :: api_tetraIn_
+      integer(c_size_t), value, intent(in) :: api_tetraIn_n_
+      type(c_ptr), intent(out) :: api_steiner_
+      integer(c_size_t) :: api_steiner_n_
+      type(c_ptr), intent(out) :: api_tetraOut_
+      integer(c_size_t), intent(out) :: api_tetraOut_n_
+      integer(c_int), intent(out), optional :: ierr_
+    end subroutine C_API
+    end interface
+    real(c_double), dimension(:), intent(in) :: coord
+    real(c_double), dimension(:), intent(in) :: sizeAtNode
+    integer(c_size_t), dimension(:), intent(in) :: tetraIn
+    real(c_double), dimension(:), allocatable, intent(out) :: steiner
+    integer(c_size_t), dimension(:), allocatable, intent(out) :: tetraOut
+    integer(c_int), intent(out), optional :: ierr
+    type(c_ptr) :: api_steiner_
+    integer(c_size_t) :: api_steiner_n_
+    type(c_ptr) :: api_tetraOut_
+    integer(c_size_t) :: api_tetraOut_n_
+    call C_API(api_coord_=coord, &
+         api_coord_n_=size_gmsh_double(coord), &
+         api_sizeAtNode_=sizeAtNode, &
+         api_sizeAtNode_n_=size_gmsh_double(sizeAtNode), &
+         api_tetraIn_=tetraIn, &
+         api_tetraIn_n_=size_gmsh_size(tetraIn), &
+         api_steiner_=api_steiner_, &
+         api_steiner_n_=api_steiner_n_, &
+         api_tetraOut_=api_tetraOut_, &
+         api_tetraOut_n_=api_tetraOut_n_, &
+         ierr_=ierr)
+    steiner = ovectordouble_(api_steiner_, &
+      api_steiner_n_)
+    tetraOut = ovectorsize_(api_tetraOut_, &
+      api_tetraOut_n_)
+  end subroutine gmshAlgorithmRefineTetrahedra
 
   !> Set the numerical option `option' to the value `value' for plugin `name'.
   !! Plugins available in the official Gmsh release are listed in the "Gmsh
