@@ -542,8 +542,12 @@ module gmsh
         gmshModelMeshGetOverlapInterfaceBoundary
     procedure, nopass :: getBoundaryOverlapParent => &
         gmshModelMeshGetBoundaryOverlapParent
+    procedure, nopass :: getOverlapOverlappedEntity => &
+        gmshModelMeshGetOverlapOverlappedEntity
     procedure, nopass :: unpartition => &
         gmshModelMeshUnpartition
+    procedure, nopass :: writePartitions => &
+        gmshModelMeshWritePartitions
     procedure, nopass :: optimize => &
         gmshModelMeshOptimize
     procedure, nopass :: recombine => &
@@ -3552,6 +3556,43 @@ module gmsh
          ierr_=ierr)
   end subroutine gmshModelMeshGetBoundaryOverlapParent
 
+  !> If the entity of dimension `dim' and tag `overlapTag' is a highest-
+  !! dimensional overlap entity (OverlapSurface or OverlapVolume), set
+  !! `overlappedEntityTag' to the tag of the partition entity whose elements it
+  !! covers. This covered partition entity belongs to a partition different from
+  !! the partition owning the overlap. For a boundary overlap that extends an
+  !! existing model boundary, or an inner overlap boundary lying on an internal
+  !! interface, set `overlappedEntityTag' to the tag of the underlying boundary
+  !! or interface entity. A plain inner overlap boundary has no underlying same-
+  !! dimensional entity and returns -1. Set `overlappedEntityTag' to -1 if the
+  !! entity is not an overlap.
+  subroutine gmshModelMeshGetOverlapOverlappedEntity(dim, &
+                                                     overlapTag, &
+                                                     overlappedEntityTag, &
+                                                     ierr)
+    interface
+    subroutine C_API(dim, &
+                     overlapTag, &
+                     overlappedEntityTag, &
+                     ierr_) &
+      bind(C, name="gmshModelMeshGetOverlapOverlappedEntity")
+      use, intrinsic :: iso_c_binding
+      integer(c_int), value, intent(in) :: dim
+      integer(c_int), value, intent(in) :: overlapTag
+      integer(c_int) :: overlappedEntityTag
+      integer(c_int), intent(out), optional :: ierr_
+    end subroutine C_API
+    end interface
+    integer, intent(in) :: dim
+    integer, intent(in) :: overlapTag
+    integer(c_int) :: overlappedEntityTag
+    integer(c_int), intent(out), optional :: ierr
+    call C_API(dim=int(dim, c_int), &
+         overlapTag=int(overlapTag, c_int), &
+         overlappedEntityTag=overlappedEntityTag, &
+         ierr_=ierr)
+  end subroutine gmshModelMeshGetOverlapOverlappedEntity
+
   !> Unpartition the mesh of the current model.
   subroutine gmshModelMeshUnpartition(ierr)
     interface
@@ -3564,6 +3605,34 @@ module gmsh
     integer(c_int), intent(out), optional :: ierr
     call C_API(ierr_=ierr)
   end subroutine gmshModelMeshUnpartition
+
+  !> Write selected partitions of the mesh into a single file `fileName'. The
+  !! export format is MSH4. The `partitions' vector specifies which partition
+  !! numbers to include.
+  subroutine gmshModelMeshWritePartitions(fileName, &
+                                          partitions, &
+                                          ierr)
+    interface
+    subroutine C_API(fileName, &
+                     api_partitions_, &
+                     api_partitions_n_, &
+                     ierr_) &
+      bind(C, name="gmshModelMeshWritePartitions")
+      use, intrinsic :: iso_c_binding
+      character(len=1, kind=c_char), dimension(*), intent(in) :: fileName
+      integer(c_int), dimension(*) :: api_partitions_
+      integer(c_size_t), value, intent(in) :: api_partitions_n_
+      integer(c_int), intent(out), optional :: ierr_
+    end subroutine C_API
+    end interface
+    character(len=*), intent(in) :: fileName
+    integer(c_int), dimension(:), intent(in) :: partitions
+    integer(c_int), intent(out), optional :: ierr
+    call C_API(fileName=istring_(fileName), &
+         api_partitions_=partitions, &
+         api_partitions_n_=size_gmsh_int(partitions), &
+         ierr_=ierr)
+  end subroutine gmshModelMeshWritePartitions
 
   !> Optimize the mesh of the current model using `method' (empty for default
   !! tetrahedral mesh optimizer, "Netgen" for Netgen optimizer, "HighOrder" for
