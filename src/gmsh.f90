@@ -3783,10 +3783,13 @@ module gmsh
   !! smoother, "HighOrderFastCurving" for fast curving algorithm, "Laplace2D"
   !! for Laplace smoothing, "Relocate2D" and "Relocate3D" for node relocation,
   !! "QuadQuasiStructured" for quad mesh optimization, "UntangleMeshGeometry"
-  !! for untangling, "HXT" for tetrahedral optimisation). If `force' is set
-  !! apply the optimization also to discrete entities. If `dimTags' (given as a
-  !! vector of (dim, tag) pairs) is given, only apply the optimizer to the given
-  !! entities. For HXT optimizer, the `quality' argument should be specified
+  !! for untangling, "HXT" for tetrahedral optimisation). The methods other than
+  !! the high-order ones optimize the first order mesh: the high-order elements
+  !! are then recreated, and optimized according to the `Mesh.HighOrderOptimize'
+  !! option. If `force' is set apply the optimization also to discrete entities.
+  !! If `dimTags' (given as a vector of (dim, tag) pairs) is given, only apply
+  !! the optimizer to the given entities. For HXT optimizer, the `quality'
+  !! argument should be specified
   subroutine gmshModelMeshOptimize(method, &
                                    force, &
                                    niter, &
@@ -9504,9 +9507,11 @@ module gmsh
   !! by the curves `curveTags'. `curveTags' should contain (signed) tags of
   !! model entities of dimension 1 forming a closed loop: a negative tag
   !! signifies that the underlying curve is considered with reversed
-  !! orientation. If `tag' is positive, set the tag explicitly; otherwise a new
-  !! tag is selected automatically. If `reorient' is set, automatically reorient
-  !! the curves if necessary. Return the tag of the curve loop.
+  !! orientation. The curves can be given in any order, but their orientations
+  !! must be consistent, unless `reorient' is set: in that case the curves are
+  !! automatically reoriented if necessary. The curve loop is oriented according
+  !! to its first curve. If `tag' is positive, set the tag explicitly; otherwise
+  !! a new tag is selected automatically. Return the tag of the curve loop.
   function gmshModelGeoAddCurveLoop(curveTags, &
                                     tag, &
                                     reorient, &
@@ -11385,10 +11390,12 @@ module gmsh
   end function gmshModelOccAddBezier
 
   !> Add a wire (open or closed) in the OpenCASCADE CAD representation, formed
-  !! by the curves `curveTags'. Note that an OpenCASCADE wire can be made of
-  !! curves that share geometrically identical (but topologically different)
-  !! points. If `tag' is positive, set the tag explicitly; otherwise a new tag
-  !! is selected automatically. Return the tag of the wire.
+  !! by the curves `curveTags', given in any order and orientation: the wire is
+  !! oriented according to the orientation of its first curve, reversed if its
+  !! tag is negative. Note that an OpenCASCADE wire can be made of curves that
+  !! share geometrically identical (but topologically different) points. If
+  !! `tag' is positive, set the tag explicitly; otherwise a new tag is selected
+  !! automatically. Return the tag of the wire.
   function gmshModelOccAddWire(curveTags, &
                                tag, &
                                checkClosed, &
@@ -11423,13 +11430,13 @@ module gmsh
 
   !> Add a curve loop (a closed wire) in the OpenCASCADE CAD representation,
   !! formed by the curves `curveTags'. `curveTags' should contain tags of curves
-  !! forming a closed loop. Negative tags can be specified for compatibility
-  !! with the built-in kernel, but are simply ignored: the wire is oriented
-  !! according to the orientation of its first curve. Note that an OpenCASCADE
-  !! curve loop can be made of curves that share geometrically identical (but
-  !! topologically different) points. If `tag' is positive, set the tag
-  !! explicitly; otherwise a new tag is selected automatically. Return the tag
-  !! of the curve loop.
+  !! forming a closed loop, in any order and orientation: the curve loop is
+  !! oriented according to the orientation of its first curve, reversed if its
+  !! tag is negative (the signs of the other tags are ignored). Note that an
+  !! OpenCASCADE curve loop can be made of curves that share geometrically
+  !! identical (but topologically different) points. If `tag' is positive, set
+  !! the tag explicitly; otherwise a new tag is selected automatically. Return
+  !! the tag of the curve loop.
   function gmshModelOccAddCurveLoop(curveTags, &
                                     tag, &
                                     ierr)
@@ -12746,7 +12753,11 @@ module gmsh
   !! "DiscreteTrihedron", "CorrectedFrenet", "Fixed", "Frenet",
   !! "ConstantNormal", "Darboux", "GuideAC", "GuidePlan", "GuideACWithContact",
   !! "GuidePlanWithContact"). If `trihedron' is not provided,
-  !! "DiscreteTrihedron" is assumed. Return the pipe in `outDimTags'.
+  !! "DiscreteTrihedron" is assumed. Return the pipe in `outDimTags', as for
+  !! `extrude': for each entity, the entity at the end of the wire, the swept
+  !! entity and the lateral entities (if `Geometry.ExtrudeReturnLateralEntities'
+  !! is set). For a curve or a point along a wire of several curves, only the
+  !! swept entities are returned.
   subroutine gmshModelOccAddPipe(dimTags, &
                                  wireTag, &
                                  outDimTags, &
@@ -13498,13 +13509,12 @@ module gmsh
   !! vectors of (dim, tag) pairs) in the OpenCASCADE CAD representation, making
   !! all interfaces conformal. When applied to entities of different dimensions,
   !! the lower dimensional entities will be automatically embedded in the higher
-  !! dimensional entities if they are not on their boundary. In order to
-  !! preserve entity tags, entities should be provided in ascending dimension
-  !! order. Return the resulting entities in `outDimTags', and the
-  !! correspondance between input and resulting entities in `outDimTagsMap'. If
-  !! `tag' is positive, try to set the tag explicitly (only valid if the boolean
-  !! operation results in a single entity). Remove the object if `removeObject'
-  !! is set. Remove the tool if `removeTool' is set.
+  !! dimensional entities if they are not on their boundary. Return the
+  !! resulting entities in `outDimTags', and the correspondance between input
+  !! and resulting entities in `outDimTagsMap'. If `tag' is positive, try to set
+  !! the tag explicitly (only valid if the boolean operation results in a single
+  !! entity). Remove the object if `removeObject' is set. Remove the tool if
+  !! `removeTool' is set.
   subroutine gmshModelOccFragment(objectDimTags, &
                                   toolDimTags, &
                                   outDimTags, &
@@ -13929,8 +13939,14 @@ module gmsh
 
   !> Apply various healing procedures to the entities `dimTags' (given as a
   !! vector of (dim, tag) pairs), or to all the entities in the model if
-  !! `dimTags' is empty, in the OpenCASCADE CAD representation. Return the
-  !! healed entities in `outDimTags'.
+  !! `dimTags' is empty, in the OpenCASCADE CAD representation: recompute the
+  !! tolerances to the smallest ones the geometry needs (if `fixTolerances' is
+  !! set), fix the degenerated curves and surfaces, the small curves and the
+  !! small surfaces, sew the surfaces sharing geometrically identical curves
+  !! (with tolerance `tolerance'), and make volumes from the closed shells of
+  !! surfaces bounding no volume. The entities are healed together, the changes
+  !! applied to the rest of the model, and the entities keep their tag unless
+  !! they are removed or merged. Return the healed entities in `outDimTags'.
   subroutine gmshModelOccHealShapes(outDimTags, &
                                     dimTags, &
                                     tolerance, &
@@ -13939,6 +13955,7 @@ module gmsh
                                     fixSmallFaces, &
                                     sewFaces, &
                                     makeSolids, &
+                                    fixTolerances, &
                                     ierr)
     interface
     subroutine C_API(api_outDimTags_, &
@@ -13951,6 +13968,7 @@ module gmsh
                      fixSmallFaces, &
                      sewFaces, &
                      makeSolids, &
+                     fixTolerances, &
                      ierr_) &
       bind(C, name="gmshModelOccHealShapes")
       use, intrinsic :: iso_c_binding
@@ -13964,6 +13982,7 @@ module gmsh
       integer(c_int), value, intent(in) :: fixSmallFaces
       integer(c_int), value, intent(in) :: sewFaces
       integer(c_int), value, intent(in) :: makeSolids
+      integer(c_int), value, intent(in) :: fixTolerances
       integer(c_int), intent(out), optional :: ierr_
     end subroutine C_API
     end interface
@@ -13975,6 +13994,7 @@ module gmsh
     logical, intent(in), optional :: fixSmallFaces
     logical, intent(in), optional :: sewFaces
     logical, intent(in), optional :: makeSolids
+    logical, intent(in), optional :: fixTolerances
     integer(c_int), intent(out), optional :: ierr
     type(c_ptr) :: api_outDimTags_
     integer(c_size_t) :: api_outDimTags_n_
@@ -13988,6 +14008,7 @@ module gmsh
          fixSmallFaces=optval_c_bool(.true., fixSmallFaces), &
          sewFaces=optval_c_bool(.true., sewFaces), &
          makeSolids=optval_c_bool(.true., makeSolids), &
+         fixTolerances=optval_c_bool(.true., fixTolerances), &
          ierr_=ierr)
     outDimTags = ovectorpair_(api_outDimTags_, &
       api_outDimTags_n_)
@@ -17023,8 +17044,9 @@ module gmsh
   !> Run the event loop of the graphical user interface, i.e. repeatedly call
   !! `wait()'. First automatically create the user interface if it has not yet
   !! been initialized. If an `optionFileName' is given, load it before entering
-  !! the loop, and save all options and visibility information into it after
-  !! exiting the loop. Can only be called in the main thread.
+  !! the loop, and save all options, and the visibility and colors of the
+  !! entities, into it after exiting the loop. Can only be called in the main
+  !! thread.
   subroutine gmshFltkRun(optionFileName, &
                          ierr)
     interface
