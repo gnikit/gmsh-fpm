@@ -281,6 +281,8 @@ module gmsh
         gmshModelDiscreteImportShapes
     procedure, nopass :: addTriangulation => &
         gmshModelDiscreteAddTriangulation
+    procedure, nopass :: remove => &
+        gmshModelDiscreteRemove
     procedure, nopass :: synchronize => &
         gmshModelDiscreteSynchronize
   end type gmsh_model_discrete_t
@@ -568,8 +570,6 @@ module gmsh
         gmshModelMeshGenerate
     procedure, nopass :: partition => &
         gmshModelMeshPartition
-    procedure, nopass :: merge => &
-        gmshModelMeshMerge
     procedure, nopass :: createOverlaps => &
         gmshModelMeshCreateOverlaps
     procedure, nopass :: getPartitionEntities => &
@@ -3416,50 +3416,6 @@ module gmsh
          ierr_=ierr)
   end subroutine gmshModelMeshPartition
 
-  !> Merge the mesh of the MSH file `fileName' into the current model. If
-  !! `partitions' is not empty, only read the given partitions of a partitioned
-  !! mesh (in an MSH 4 file): their elements, the nodes of these elements and
-  !! the partition entities that contain them (with the physical groups of their
-  !! parent entities); and, if `ghosts' is set, their ghost cells, i.e. the
-  !! elements of the other partitions, of all dimensions, that share a node with
-  !! them (see the `Mesh.PartitionCreateGhostCells' option; if the file has no
-  !! ghost cells, a warning is issued and the whole mesh is read). Only the
-  !! entities with nodes or elements read are created, with their parent
-  !! entities (and without their boundaries), and the elements read keep their
-  !! partition. In a partial read, the sections of the file other than the
-  !! entities, the nodes, the elements, the periodicity and the ghost elements
-  !! are skipped, and the periodic node correspondences only include the nodes
-  !! read. Post-processing data in the file is not read.
-  subroutine gmshModelMeshMerge(fileName, &
-                                partitions, &
-                                ghosts, &
-                                ierr)
-    interface
-    subroutine C_API(fileName, &
-                     api_partitions_, &
-                     api_partitions_n_, &
-                     ghosts, &
-                     ierr_) &
-      bind(C, name="gmshModelMeshMerge")
-      use, intrinsic :: iso_c_binding
-      character(len=1, kind=c_char), dimension(*), intent(in) :: fileName
-      integer(c_int), dimension(*), optional :: api_partitions_
-      integer(c_size_t), value, intent(in) :: api_partitions_n_
-      integer(c_int), value, intent(in) :: ghosts
-      integer(c_int), intent(out), optional :: ierr_
-    end subroutine C_API
-    end interface
-    character(len=*), intent(in) :: fileName
-    integer(c_int), dimension(:), intent(in), optional :: partitions
-    logical, intent(in), optional :: ghosts
-    integer(c_int), intent(out), optional :: ierr
-    call C_API(fileName=istring_(fileName), &
-         api_partitions_=partitions, &
-         api_partitions_n_=size_gmsh_int(partitions), &
-         ghosts=optval_c_bool(.false., ghosts), &
-         ierr_=ierr)
-  end subroutine gmshModelMeshMerge
-
   !> Generate node-based overlaps (of highest dimension) for all partitions,
   !! with a number of layers equal to `layers'. The overlaps of the bounding
   !! entities (i.e. "boundary overlaps") and the inner boundaries of the
@@ -4985,7 +4941,9 @@ module gmsh
   !! (`localNodeCoord' vector, of length `dim' times `numNodes') and number of
   !! primary (first order) nodes (`numPrimaryNodes'). Polygons and polyhedra
   !! have no reference element and a variable number of nodes: `numNodes' and
-  !! `numPrimaryNodes' are -1 and `localNodeCoord' is empty.
+  !! `numPrimaryNodes' are -1 and `localNodeCoord' is empty. Trihedra (type
+  !! 140), which link a quadrangle to two triangles in hex-dominant meshes, have
+  !! 4 nodes and no reference element: `localNodeCoord' is empty.
   subroutine gmshModelMeshGetElementProperties(elementType, &
                                                elementName, &
                                                dim, &
@@ -8267,8 +8225,16 @@ module gmsh
   !! basis functions for sorting purposes. For the hierarchical function spaces,
   !! the elements must be oriented with `periodic' set in
   !! `getBasisFunctionsOrientation': the basis function of each key is then the
-  !! basis function of its master key. On surfaces, the keys of "HdivLegendre"
-  !! function spaces are those of the face functions of the 3D elements.
+  !! basis function of its master key. The master keys are at the end of the
+  !! chains of periodic entities, so that they are never periodic themselves:
+  !! e.g. for a cell periodic in x and y, the master keys of the edges along the
+  !! corner x = 1, y = 1 are those of the edges along x = 0, y = 0, and not
+  !! those along x = 0, y = 1, which are periodic in y. Such a master key may
+  !! lie off the master entity `tagMaster': the location of its key (`coord') is
+  !! then that of the master key (`coordMaster') moved by a composition of the
+  !! periodic transformations (e.g. the sum of the translations in x and y). On
+  !! surfaces, the keys of "HdivLegendre" function spaces are those of the face
+  !! functions of the 3D elements.
   subroutine gmshModelMeshGetPeriodicKeys(elementType, &
                                           functionSpaceType, &
                                           tag, &
@@ -15448,6 +15414,37 @@ module gmsh
     outDimTags = ovectorpair_(api_outDimTags_, &
       api_outDimTags_n_)
   end subroutine gmshModelDiscreteAddTriangulation
+
+  !> Remove the volumes, and the surfaces that bound no volume, among the
+  !! entities `dimTags' (given as a vector of (dim, tag) pairs) in the discrete
+  !! CAD representation; the other entities are left alone. If `recursive' is
+  !! true, also remove the surfaces of the removed volumes that no other volume
+  !! uses. The curves and the points are removed with the last surface that uses
+  !! them.
+  subroutine gmshModelDiscreteRemove(dimTags, &
+                                     recursive, &
+                                     ierr)
+    interface
+    subroutine C_API(api_dimTags_, &
+                     api_dimTags_n_, &
+                     recursive, &
+                     ierr_) &
+      bind(C, name="gmshModelDiscreteRemove")
+      use, intrinsic :: iso_c_binding
+      integer(c_int), dimension(*) :: api_dimTags_
+      integer(c_size_t), value, intent(in) :: api_dimTags_n_
+      integer(c_int), value, intent(in) :: recursive
+      integer(c_int), intent(out), optional :: ierr_
+    end subroutine C_API
+    end interface
+    integer(c_int), dimension(:,:), intent(in) :: dimTags
+    logical, intent(in), optional :: recursive
+    integer(c_int), intent(out), optional :: ierr
+    call C_API(api_dimTags_=dimTags, &
+         api_dimTags_n_=size_gmsh_pair(dimTags), &
+         recursive=optval_c_bool(.false., recursive), &
+         ierr_=ierr)
+  end subroutine gmshModelDiscreteRemove
 
   !> Synchronize the discrete CAD representation with the current Gmsh model:
   !! its points, curves, surfaces and volumes become discrete entities of the
